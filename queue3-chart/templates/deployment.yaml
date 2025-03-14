@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  {{ .Release.Namespace }}-{{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app:  {{ .Release.Namespace }}-{{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+       labels:
+        app: {{ .Release.Name }}
+    spec:
+      serviceAccountName: sqs-read-sqs-email
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app:  {{ .Release.Namespace }}-{{ .Release.Name }}
+              topologyKey: "kubernetes.io/hostname"
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: "kubernetes.io/hostname"
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app:  {{ .Release.Namespace }}-{{ .Release.Name }}
+      containers:
+      - name:  {{ .Release.Namespace }}-{{ .Release.Name }}
+        image: 452968854315.dkr.ecr.eu-north-1.amazonaws.com/alfie/priority-3:main
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
+        env:
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: queue-config
+              key: AWS_REGION
+        - name: P3_QUEUE_URL
+          valueFrom:
+            secretKeyRef:
+              name: queue3-secrets
+              key: P3_QUEUE_URL
+        - name: SES_SENDER_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: queue3-secrets
+              key: SES_SENDER_EMAIL
+        - name: SES_RECIPIENT_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: queue3-secrets
+              key: SES_RECIPIENT_EMAIL

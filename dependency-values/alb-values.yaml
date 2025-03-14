@@ -1,0 +1,6 @@
+clusterName: alfie-issue-creator-cluster
+serviceAccount.create: false 
+serviceAccount:
+  name: aws-load-balancer-controller
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::452968854315:role/alfie-iam_eks_role_lb_controller

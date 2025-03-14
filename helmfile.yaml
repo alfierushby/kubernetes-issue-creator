@@ -1,0 +1,58 @@
+repositories:
+  - name: aws
+    url: "https://aws.github.io/eks-charts"
+  - name: external-dns
+    url: "https://kubernetes-sigs.github.io/external-dns/"
+
+
+releases:  
+
+  - name: external-dns
+    namespace: kube-system
+    chart: "external-dns/external-dns"
+    version: "1.15.2"
+    disableValidation: true
+    values: 
+      - dependency-values/external-dns-values.yaml
+
+  - name: aws-load-balancer-controller
+    namespace: kube-system
+    chart: "aws/aws-load-balancer-controller"
+    disableValidation: true
+    wait: true 
+    version: "1.11.0"
+    values: 
+      - dependency-values/alb-values.yaml
+
+  - name: shared
+    namespace: alfie
+    chart: "./shared-chart"
+    wait: true
+
+  - name: frontend
+    namespace: alfie
+    chart: "./frontend-chart"
+    wait: true
+    waitForJobs: true
+    needs:
+      - kube-system/aws-load-balancer-controller
+      - alfie/shared
+
+  - name: queue1
+    namespace: alfie
+    chart: "./queue1-chart"
+    wait: true
+    needs:
+      - alfie/shared
+  - name: queue2
+    namespace: alfie
+    chart: "./queue2-chart"
+    wait: true
+    needs:
+      - alfie/shared
+  - name: queue3
+    namespace: alfie
+    chart: "./queue3-chart"
+    wait: true
+    needs:
+      - alfie/shared
